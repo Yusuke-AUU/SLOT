@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Royal Slots">
+<title>ROYAL SLOTS</title>
+<meta property="og:title" content="ROYAL SLOTS">
+<meta property="og:description" content="本格スロットマシン。スピン＆ストップで揃えてジャックポットを狙え！">
+<meta property="og:image" content="og-image.png">
+<meta property="og:type" content="website">
+<link rel="manifest" href="manifest.json">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Oswald:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="icon" type="image/x-icon" href="favicon.ico">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --gold:#c9a84c;--gold-light:#f0d080;--gold-dark:#8b6914;
+  --cream:#f5f0e8;
+}
+html,body{
+  width:100%;height:100%;overflow:hidden;
+  background:radial-gradient(ellipse at center,#1e0a4a 0%,#0a0520 100%);
+  font-family:'Oswald',sans-serif;color:var(--cream);user-select:none;
+}
+#app{
+  display:flex;flex-direction:column;
+  height:100dvh;max-width:540px;margin:0 auto;
+  padding:8px 10px 10px;gap:5px;
+}
+
+/* Header */
+#header{text-align:center;flex-shrink:0;position:relative;}
+#header h1{
+  font-family:'Playfair Display',serif;font-size:1.25rem;font-weight:900;
+  letter-spacing:0.2em;
+  background:linear-gradient(135deg,var(--gold-dark),var(--gold-light),var(--gold));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  filter:drop-shadow(0 1px 6px rgba(201,168,76,0.5));
+}
+.hline{height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin:2px auto;width:50%;}
+#help-btn{
+  position:absolute;right:0;top:50%;transform:translateY(-50%);
+  width:26px;height:26px;border-radius:50%;
+  background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.5);
+  color:var(--gold);font-size:0.8rem;font-weight:700;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+}
+#reset-btn{
+  position:absolute;left:0;top:50%;transform:translateY(-50%);
+  width:26px;height:26px;border-radius:50%;
+  background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.3);
+  color:var(--gold);font-size:0.9rem;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+}
+
+/* Machine */
+#machine{
+  flex:1;min-height:0;
+  background:linear-gradient(160deg,#2d1060 0%,#150830 100%);
+  border:2px solid rgba(201,168,76,0.35);border-radius:14px;
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:space-evenly;padding:6px 8px;position:relative;
+  box-shadow:inset 0 2px 0 rgba(201,168,76,0.1),0 0 40px rgba(80,20,160,0.4);
+}
+#machine::before{
+  content:'';position:absolute;inset:4px;border-radius:10px;
+  border:1px solid rgba(201,168,76,0.07);pointer-events:none;
+}
+.phase-badge{
+  font-size:0.52rem;letter-spacing:0.35em;color:var(--gold);opacity:0.7;
+  background:rgba(0,0,0,0.3);padding:2px 10px;border-radius:20px;
+  border:1px solid rgba(201,168,76,0.2);
+}
+
+/* Jackpot */
+#jackpot-row{display:flex;align-items:center;gap:6px;}
+.jp-label{font-size:0.48rem;letter-spacing:0.3em;color:rgba(201,168,76,0.6);}
+#jackpot-val{
+  font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:900;
+  color:var(--gold-light);filter:drop-shadow(0 0 10px rgba(240,208,128,0.6));
+}
+@keyframes jpFlash{0%,100%{color:var(--gold-light);}50%{color:#fff;filter:drop-shadow(0 0 20px #fff);}}
+.jp-flash{animation:jpFlash 0.4s ease 3;}
+
+/* ====== REELS ====== */
+#reels-outer{
+  width:100%;
+  background:rgba(0,0,0,0.55);
+  border:2px solid rgba(201,168,76,0.5);
+  border-radius:10px;
+  padding:3px;
+  position:relative;
+}
+
+/* Payline overlays */
+#paylines-svg{
+  position:absolute;inset:0;width:100%;height:100%;
+  pointer-events:none;z-index:20;border-radius:10px;overflow:hidden;
+}
+
+#reels-row{
+  display:flex;gap:3px;
+}
+
+.reel-col{
+  flex:1;
+  border-radius:6px;
+  overflow:hidden;
+  position:relative;
+  background:#000;
+  /* top & bottom fade */
+}
+.reel-col::before,.reel-col::after{
+  content:'';position:absolute;left:0;right:0;height:30%;z-index:10;pointer-events:none;
+}
+.reel-col::before{top:0;background:linear-gradient(to bottom,rgba(18,4,44,0.9),transparent);}
+.reel-col::after{bottom:0;background:linear-gradient(to top,rgba(18,4,44,0.9),transparent);}
+
+/* Center row highlight border */
+.reel-center-line{
+  position:absolute;left:0;right:0;top:33.33%;height:33.34%;
+  border-top:1px solid rgba(201,168,76,0.3);
+  border-bottom:1px solid rgba(201,168,76,0.3);
+  pointer-events:none;z-index:11;
+}
+
+/* The scrolling strip inside each reel */
+.reel-strip{
+  display:flex;flex-direction:column;
+  will-change:transform;
+}
+.sym-cell{
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.75rem;line-height:1;flex-shrink:0;
+}
+/* Win highlight */
+.sym-cell.lit{
+  background:rgba(255,220,50,0.18);
+  filter:drop-shadow(0 0 6px gold);
+}
+@keyframes litPulse{0%,100%{filter:brightness(1) drop-shadow(0 0 4px gold);}50%{filter:brightness(1.7) drop-shadow(0 0 12px gold);}}
+.sym-cell.lit{animation:litPulse 0.55s ease infinite;}
+
+/* Stopped reel overlay */
+.reel-col.stopped::before,.reel-col.stopped::after{opacity:0.5;}
+
+/* Status / guide */
+#guide-box{
+  width:100%;background:rgba(0,0,0,0.45);border-radius:8px;
+  border:1px solid rgba(201,168,76,0.15);padding:4px 10px;text-align:center;
+}
+#guide-sit{font-size:0.7rem;color:#cce8ff;line-height:1.4;}
+#guide-hint{font-size:0.62rem;color:rgba(201,168,76,0.7);margin-top:1px;font-style:italic;}
+
+#status-msg{font-size:0.8rem;font-style:italic;text-align:center;min-height:16px;color:var(--cream);}
+#status-msg.win{color:#7fff7f;}
+#status-msg.lose{color:#ff8888;}
+#status-msg.jp{color:var(--gold-light);animation:jpFlash 0.5s ease infinite alternate;}
+
+/* Pay mini */
+#pay-mini{
+  display:flex;gap:5px;flex-wrap:wrap;justify-content:center;width:100%;
+}
+.pay-item{
+  font-size:0.55rem;color:rgba(245,240,232,0.7);text-align:center;
+  background:rgba(0,0,0,0.2);border-radius:4px;padding:2px 5px;
+  border:1px solid rgba(201,168,76,0.1);
+}
+.pay-item .ps{font-size:0.72rem;}
+.pay-item .pm{color:var(--gold-light);font-weight:700;}
+
+/* ====== BOTTOM PANEL ====== */
+#bottom-panel{
+  flex-shrink:0;background:rgba(0,0,0,0.3);
+  border:1px solid rgba(201,168,76,0.2);border-radius:10px;padding:6px 8px;
+}
+.panel-label{font-size:0.48rem;letter-spacing:0.3em;color:var(--gold);opacity:0.7;margin-bottom:3px;text-align:center;}
+
+/* Chip row */
+#chip-row{display:flex;gap:3px;align-items:center;margin-bottom:4px;}
+.chip-btn{
+  width:33px;height:33px;border-radius:50%;border:2px solid rgba(255,255,255,0.2);
+  font-family:'Oswald',sans-serif;font-weight:700;font-size:0.6rem;
+  cursor:pointer;transition:all 0.1s;flex-shrink:0;
+}
+.chip-btn:active{transform:scale(0.88);}
+.chip-btn:disabled{opacity:0.22;cursor:not-allowed;}
+#c1 {background:radial-gradient(circle,#a0a0a0,#606060);color:#fff;}
+#c5 {background:radial-gradient(circle,#e53e3e,#c53030);color:#fff;}
+#c10{background:radial-gradient(circle,#38a169,#276749);color:#fff;}
+#c25{background:radial-gradient(circle,#3182ce,#2b6cb0);color:#fff;}
+#c100{background:radial-gradient(circle,#805ad5,#6b46c1);color:#fff;}
+#cmax{
+  flex:1;background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.4);
+  border-radius:6px;color:var(--gold);font-family:'Oswald',sans-serif;font-size:0.58rem;
+  letter-spacing:0.1em;cursor:pointer;padding:3px;transition:all 0.1s;
+}
+#cmax:disabled{opacity:0.2;cursor:not-allowed;}
+
+/* Info row */
+#info-row{display:flex;justify-content:space-between;font-size:0.58rem;margin-bottom:4px;}
+.iitem{text-align:center;}
+.iitem .iv{font-family:'Playfair Display',serif;font-size:0.95rem;color:var(--gold-light);font-weight:700;display:block;}
+.iitem .iv.wv{color:#7fff7f;filter:drop-shadow(0 0 5px rgba(127,255,127,0.5));}
+
+/* ====== SPIN & STOP BUTTONS ====== */
+#action-row{display:flex;gap:4px;}
+
+#spin-btn{
+  flex:2;border:none;border-radius:8px;padding:9px 4px;
+  font-family:'Oswald',sans-serif;font-size:0.85rem;font-weight:700;
+  letter-spacing:0.12em;cursor:pointer;transition:all 0.12s;
+  background:linear-gradient(135deg,#6b21a8,#9333ea,#6b21a8);
+  color:#fff;border:2px solid rgba(180,140,255,0.5);
+  box-shadow:0 0 16px rgba(147,51,234,0.4);position:relative;overflow:hidden;
+}
+#spin-btn::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,var(--gold-dark),var(--gold),var(--gold-dark));
+  opacity:0;transition:opacity 0.2s;
+}
+#spin-btn.ready::before{opacity:1;}
+#spin-btn.ready{color:#0a0a0a;border-color:var(--gold-light);box-shadow:0 0 16px rgba(201,168,76,0.5);}
+#spin-btn span{position:relative;z-index:1;}
+#spin-btn:disabled{opacity:0.28;cursor:not-allowed;}
+#spin-btn:active:not(:disabled){transform:scale(0.96);}
+
+.stop-btn{
+  flex:1;border:none;border-radius:8px;padding:9px 2px;
+  font-family:'Oswald',sans-serif;font-size:0.7rem;font-weight:600;
+  letter-spacing:0.06em;cursor:pointer;transition:all 0.12s;
+  background:rgba(255,80,80,0.15);color:#ffaaaa;
+  border:1px solid rgba(255,80,80,0.35);
+  display:flex;flex-direction:column;align-items:center;gap:1px;
+}
+.stop-btn .sb-main{font-size:0.7rem;}
+.stop-btn .sb-sub{font-size:0.45rem;opacity:0.7;}
+.stop-btn:disabled{opacity:0.2;cursor:not-allowed;}
+.stop-btn:active:not(:disabled){transform:scale(0.95);}
+.stop-btn.stopped-state{
+  background:rgba(100,100,100,0.15);color:#888;
+  border-color:rgba(150,150,150,0.2);
+}
+
+/* Coin fly */
+.coin-fly{
+  position:fixed;font-size:1.1rem;pointer-events:none;z-index:999;
+  animation:coinFly 0.85s ease-out forwards;
+}
+@keyframes coinFly{
+  0%{opacity:1;transform:translate(0,0) scale(1);}
+  100%{opacity:0;transform:translate(var(--tx),var(--ty)) scale(0.2);}
+}
+
+/* Win flash overlay */
+#win-overlay{
+  display:none;position:fixed;inset:0;z-index:200;
+  align-items:center;justify-content:center;pointer-events:none;
+}
+#win-overlay.show{display:flex;}
+#win-box{
+  font-family:'Playfair Display',serif;text-align:center;
+  animation:wbIn 0.35s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes wbIn{from{opacity:0;transform:scale(0.4);}to{opacity:1;transform:scale(1);}}
+#win-box .wbl{font-size:0.65rem;letter-spacing:0.4em;color:var(--gold);}
+#win-box .wba{font-size:2.6rem;font-weight:900;color:var(--gold-light);filter:drop-shadow(0 0 16px rgba(240,208,128,0.8));line-height:1;}
+#win-box .wbs{font-size:0.75rem;color:var(--cream);margin-top:3px;}
+
+/* Help modal */
+#help-modal{
+  display:none;position:fixed;inset:0;z-index:100;
+  background:rgba(0,0,0,0.88);align-items:center;justify-content:center;
+}
+#help-modal.open{display:flex;}
+#help-inner{
+  background:linear-gradient(160deg,#1e0845,#0f0425);
+  border:1px solid rgba(201,168,76,0.4);border-radius:16px;
+  padding:16px 14px;max-width:460px;width:92%;max-height:88vh;overflow-y:auto;
+}
+#help-inner h2{font-family:'Playfair Display',serif;font-size:1.05rem;color:var(--gold);text-align:center;margin-bottom:10px;letter-spacing:0.15em;}
+.hs{margin-bottom:10px;}
+.hs h3{font-size:0.65rem;letter-spacing:0.25em;color:var(--gold-light);border-bottom:1px solid rgba(201,168,76,0.2);padding-bottom:2px;margin-bottom:5px;}
+.hd{font-size:0.68rem;color:rgba(245,240,232,0.82);line-height:1.55;}
+.pt{width:100%;border-collapse:collapse;font-size:0.62rem;}
+.pt th{color:var(--gold);padding:2px 4px;text-align:left;border-bottom:1px solid rgba(201,168,76,0.2);}
+.pt td{padding:2px 4px;color:rgba(245,240,232,0.82);}
+.pt td:last-child{color:var(--gold-light);font-weight:700;text-align:right;}
+#help-close{
+  display:block;margin:12px auto 0;
+  background:linear-gradient(135deg,var(--gold-dark),var(--gold));
+  color:#0a0a0a;font-family:'Oswald',sans-serif;font-weight:700;
+  font-size:0.78rem;letter-spacing:0.2em;border:none;border-radius:8px;
+  padding:9px 28px;cursor:pointer;
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div id="header">
+    <h1>ROYAL SLOTS</h1>
+    <div class="hline"></div>
+    <button id="help-btn" onclick="openHelp()">？</button>
+    <button id="reset-btn" onclick="resetGame()">↺</button>
+  </div>
+
+  <div id="machine">
+    <div class="phase-badge" id="badge">WELCOME</div>
+
+    <div id="jackpot-row">
+      <span class="jp-label">✦ JACKPOT</span>
+      <span id="jackpot-val">50,000</span>
+      <span class="jp-label">🪙 ✦</span>
+    </div>
+
+    <!-- REELS -->
+    <div id="reels-outer">
+      <svg id="paylines-svg" id="psvg"></svg>
+      <div id="reels-row">
+        <div class="reel-col" id="rc0">
+          <div class="reel-center-line"></div>
+          <div class="reel-strip" id="rs0"></div>
+        </div>
+        <div class="reel-col" id="rc1">
+          <div class="reel-center-line"></div>
+          <div class="reel-strip" id="rs1"></div>
+        </div>
+        <div class="reel-col" id="rc2">
+          <div class="reel-center-line"></div>
+          <div class="reel-strip" id="rs2"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="guide-box">
+      <div id="guide-sit">ベットしてSPINを押してください！</div>
+      <div id="guide-hint">左・中・右のSTOPで止めて役を揃えよう</div>
+    </div>
+
+    <div id="status-msg"></div>
+
+    <!-- Pay mini -->
+    <div id="pay-mini">
+      <div class="pay-item"><span class="ps">7️⃣7️⃣7️⃣</span><br><span class="pm">×500</span></div>
+      <div class="pay-item"><span class="ps">⭐⭐⭐</span><br><span class="pm">×100</span></div>
+      <div class="pay-item"><span class="ps">💎💎💎</span><br><span class="pm">×50</span></div>
+      <div class="pay-item"><span class="ps">🔔🔔🔔</span><br><span class="pm">×20</span></div>
+      <div class="pay-item"><span class="ps">🍒🍒🍒</span><br><span class="pm">×10</span></div>
+      <div class="pay-item"><span class="ps">🍋🍋🍋</span><br><span class="pm">×5</span></div>
+      <div class="pay-item"><span class="ps">🍇🍇🍇</span><br><span class="pm">×3</span></div>
+      <div class="pay-item"><span class="ps">🍒🍒＋</span><br><span class="pm">×2</span></div>
+    </div>
+  </div>
+
+  <!-- Bottom panel -->
+  <div id="bottom-panel">
+    <div class="panel-label">▸ BET ◂</div>
+    <div id="chip-row">
+      <button class="chip-btn" id="c1"  onclick="addBet(1)">1</button>
+      <button class="chip-btn" id="c5"  onclick="addBet(5)">5</button>
+      <button class="chip-btn" id="c10" onclick="addBet(10)">10</button>
+      <button class="chip-btn" id="c25" onclick="addBet(25)">25</button>
+      <button class="chip-btn" id="c100" onclick="addBet(100)">100</button>
+      <button id="cmax" onclick="betMax()">MAX BET</button>
+    </div>
+    <div id="info-row">
+      <div class="iitem">持ちチップ<span class="iv" id="chips-disp">1000</span></div>
+      <div class="iitem">現在のBET<span class="iv" id="bet-disp">0</span></div>
+      <div class="iitem">前回の獲得<span class="iv" id="last-win">—</span></div>
+    </div>
+    <div id="action-row">
+      <button class="stop-btn" id="stop0" onclick="stopReel(0)" disabled>
+        <span class="sb-main">STOP</span><span class="sb-sub">左</span>
+      </button>
+      <button id="spin-btn" onclick="onSpin()" disabled>
+        <span>🎰 SPIN</span>
+      </button>
+      <button class="stop-btn" id="stop1" onclick="stopReel(1)" disabled>
+        <span class="sb-main">STOP</span><span class="sb-sub">中</span>
+      </button>
+      <button class="stop-btn" id="stop2" onclick="stopReel(2)" disabled>
+        <span class="sb-main">STOP</span><span class="sb-sub">右</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Win overlay -->
+<div id="win-overlay">
+  <div id="win-box">
+    <div class="wbl" id="wbl">WIN!</div>
+    <div class="wba" id="wba">+100</div>
+    <div class="wbs" id="wbs"></div>
+  </div>
+</div>
+
+<!-- Help -->
+<div id="help-modal">
+  <div id="help-inner">
+    <h2>🎰 スロット ガイド</h2>
+    <div class="hs">
+      <h3>🎮 遊び方</h3>
+      <div class="hd">
+        ① チップボタンでBETを設定<br>
+        ② SPINボタンで3つのリールが回転開始<br>
+        ③ 左・中・右のSTOPボタンを押して止める<br>
+        ④ 3行＋斜め2方向の計5ラインを判定！
+      </div>
+    </div>
+    <div class="hs">
+      <h3>🔴 有効ライン（5ライン）</h3>
+      <div class="hd">
+        ─── 上段横ライン<br>
+        ─── 中段横ライン（メイン）<br>
+        ─── 下段横ライン<br>
+        ╲ 右下がり斜めライン<br>
+        ╱ 右上がり斜めライン
+      </div>
+    </div>
+    <div class="hs">
+      <h3>💰 配当表（BET × 倍率）</h3>
+      <table class="pt">
+        <tr><th>組み合わせ</th><th>倍率</th></tr>
+        <tr><td>7️⃣ 7️⃣ 7️⃣　JACKPOT!</td><td>×500</td></tr>
+        <tr><td>⭐ ⭐ ⭐</td><td>×100</td></tr>
+        <tr><td>💎 💎 💎</td><td>×50</td></tr>
+        <tr><td>🔔 🔔 🔔</td><td>×20</td></tr>
+        <tr><td>🍒 🍒 🍒</td><td>×10</td></tr>
+        <tr><td>🍋 🍋 🍋</td><td>×5</td></tr>
+        <tr><td>🍇 🍇 🍇</td><td>×3</td></tr>
+        <tr><td>🍒 🍒（左2つ揃い）</td><td>×2</td></tr>
+        <tr><td>🍒（左1つだけ）</td><td>×1</td></tr>
+        <tr><td>複数ライン同時当選</td><td>合計</td></tr>
+      </table>
+    </div>
+    <div class="hs">
+      <h3>🏆 JACKPOT</h3>
+      <div class="hd">7️⃣ 7️⃣ 7️⃣ が揃うとBET×500の超高配当！ジャックポットプールも全額獲得。スピンするたびにプールは積み上がります。</div>
+    </div>
+    <button id="help-close" onclick="closeHelp()">閉じる</button>
+  </div>
+</div>
+
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+function openHelp(){$('help-modal').classList.add('open');}
+function closeHelp(){$('help-modal').classList.remove('open');}
+$('help-modal').onclick=e=>{if(e.target===$('help-modal'))closeHelp();};
+
+// ── Symbols & weights ──
+// Each entry = [emoji, weight]
+const SYM_DEF = [
+  ['7️⃣', 1],
+  ['⭐',  2],
+  ['💎',  3],
+  ['🔔',  5],
+  ['🍒', 10],
+  ['🍋',  9],
+  ['🍇',  8],
+];
+// Build weighted pool
+const POOL = [];
+for(const [s,w] of SYM_DEF) for(let i=0;i<w;i++) POOL.push(s);
+
+// Reel strip length (virtual positions)
+const STRIP_LEN = 24;
+// Generate 3 random strips
+function makeStrip(){
+  const a=[];
+  for(let i=0;i<STRIP_LEN;i++) a.push(POOL[Math.floor(Math.random()*POOL.length)]);
+  return a;
+}
+const STRIPS = [makeStrip(), makeStrip(), makeStrip()];
+
+// ── Pay table ──
+const PAY3 = {'7️⃣':500,'⭐':100,'💎':50,'🔔':20,'🍒':10,'🍋':5,'🍇':3};
+
+function calcLine(s0,s1,s2){
+  // 3 of a kind
+  if(s0===s1&&s1===s2) return {mult:PAY3[s0]||0, label:s0+s0+s0, isJP:s0==='7️⃣'};
+  // cherry special
+  if(s0==='🍒'&&s1==='🍒') return {mult:2, label:'🍒🍒', isJP:false};
+  if(s0==='🍒') return {mult:1, label:'🍒', isJP:false};
+  return {mult:0, label:'', isJP:false};
+}
+
+// ── Paylines (row indices for each reel col: 0=top,1=mid,2=bot) ──
+// 5 lines
+const LINES = [
+  [1,1,1], // center
+  [0,0,0], // top
+  [2,2,2], // bottom
+  [0,1,2], // diagonal ↘
+  [2,1,0], // diagonal ↗
+];
+const LINE_COLORS = ['#ff4444','#44ff88','#44aaff','#ffcc00','#ff88ff'];
+
+// ── State ──
+function loadSave(){
+  try{const s=JSON.parse(localStorage.getItem('rslots2'));if(s&&s.chips>0)return s;}catch(e){}
+  return{chips:1000,jackpot:50000};
+}
+function save(){try{localStorage.setItem('rslots2',JSON.stringify({chips:G.chips,jackpot:G.jackpot}));}catch(e){}}
+
+const sv=loadSave();
+const G={
+  chips:sv.chips, bet:0, jackpot:sv.jackpot||50000,
+  phase:'idle',   // idle | spinning | over
+  reelPos:[0,0,0],    // current top-cell index for each reel
+  stopped:[false,false,false],
+  finalPos:[0,0,0],
+  rafIds:[0,0,0],
+  speeds:[0,0,0],
+  lastBet:0,
+};
+
+// ── DOM: reel cell height ──
+const CELL_H = 56; // px — must match CSS .sym-cell height
+
+// ── Build visual reels ──
+// Each reel DOM shows 3 rows (top/mid/bot).
+// We render STRIP_LEN+3 cells and scroll via translateY.
+// position p means top of visible area aligns with cell index p.
+
+function buildReelDom(ri){
+  const strip=$('rs'+ri);
+  strip.innerHTML='';
+  strip.style.transition='none';
+  const total=STRIP_LEN+3;
+  for(let i=0;i<total;i++){
+    const cell=document.createElement('div');
+    cell.className='sym-cell';
+    cell.id=`sc_${ri}_${i%STRIP_LEN}`;
+    cell.textContent=STRIPS[ri][i%STRIP_LEN];
+    cell.style.height=CELL_H+'px';
+    strip.appendChild(cell);
+  }
+}
+
+function buildAllReels(){
+  for(let i=0;i<3;i++) buildReelDom(i);
+  // Set reel container height = 3 cells
+  const rows=$('reels-row');
+  rows.style.height=(CELL_H*3)+'px';
+  for(let i=0;i<3;i++){
+    $('rc'+i).style.height=(CELL_H*3)+'px';
+  }
+  setAllPositions();
+}
+
+function setAllPositions(){
+  for(let i=0;i<3;i++) applyPos(i, G.reelPos[i]);
+}
+
+function applyPos(ri, pos){
+  const p=((pos%STRIP_LEN)+STRIP_LEN)%STRIP_LEN;
+  $('rs'+ri).style.transform=`translateY(-${p*CELL_H}px)`;
+}
+
+// ── Continuous spinning (RAF) ──
+const SPIN_SPEED = 0.25; // cells per ms
+
+let lastTime=[0,0,0];
+
+function startReelSpin(ri){
+  G.stopped[ri]=false;
+  $('stop'+ri).disabled=false;
+  $('stop'+ri).classList.remove('stopped-state');
+  $('rc'+ri).classList.remove('stopped');
+
+  let prev=null;
+  function tick(ts){
+    if(prev===null) prev=ts;
+    const dt=ts-prev; prev=ts;
+    if(!G.stopped[ri]){
+      G.reelPos[ri]=(G.reelPos[ri]+SPIN_SPEED*dt)%STRIP_LEN;
+      applyPos(ri, G.reelPos[ri]);
+      G.rafIds[ri]=requestAnimationFrame(tick);
+    }
+  }
+  G.rafIds[ri]=requestAnimationFrame(tick);
+}
+
+function stopReel(ri){
+  if(G.stopped[ri]||G.phase!=='spinning') return;
+
+  // Snap to nearest integer position
+  const snapped=Math.round(G.reelPos[ri])%STRIP_LEN;
+  G.reelPos[ri]=snapped;
+  G.finalPos[ri]=snapped;
+  G.stopped[ri]=true;
+
+  cancelAnimationFrame(G.rafIds[ri]);
+  applyPos(ri, snapped);
+
+  $('stop'+ri).disabled=true;
+  $('stop'+ri).classList.add('stopped-state');
+  $('rc'+ri).classList.add('stopped');
+
+  // Check if all stopped
+  if(G.stopped[0]&&G.stopped[1]&&G.stopped[2]){
+    setTimeout(()=>resolveResult(), 200);
+  }
+}
+
+// ── Get symbol at row for reel ──
+// row: 0=top, 1=mid, 2=bot
+function getSymAt(ri, row){
+  const base=((Math.round(G.finalPos[ri])+row)%STRIP_LEN+STRIP_LEN)%STRIP_LEN;
+  return STRIPS[ri][base];
+}
+
+// ── Resolve ──
+function resolveResult(){
+  G.phase='over';
+  disableStops();
+
+  // Build 3x3 grid [col][row]
+  const grid=[];
+  for(let c=0;c<3;c++){
+    grid[c]=[];
+    for(let r=0;r<3;r++) grid[c][r]=getSymAt(c,r);
+  }
+
+  // Check all 5 lines
+  let totalMult=0;
+  let bestLabel='';
+  let isJP=false;
+  const hitLines=[];
+
+  for(let li=0;li<LINES.length;li++){
+    const [r0,r1,r2]=LINES[li];
+    const s0=grid[0][r0], s1=grid[1][r1], s2=grid[2][r2];
+    const res=calcLine(s0,s1,s2);
+    if(res.mult>0){
+      totalMult+=res.mult;
+      hitLines.push(li);
+      if(res.isJP) isJP=true;
+      if(!bestLabel||res.mult>calcLine(...[s0,s1,s2]).mult) bestLabel=res.label;
+    }
+  }
+
+  const winAmt=Math.floor(G.bet*totalMult);
+
+  // Jackpot grows
+  G.jackpot+=Math.ceil(G.bet*0.08);
+
+  // Highlight winning cells
+  for(const li of hitLines){
+    const [r0,r1,r2]=LINES[li];
+    [[0,r0],[1,r1],[2,r2]].forEach(([c,r])=>{
+      const idx=((Math.round(G.finalPos[c])+r)%STRIP_LEN+STRIP_LEN)%STRIP_LEN;
+      // Find the DOM cell
+      const strip=$('rs'+c);
+      const cells=strip.querySelectorAll('.sym-cell');
+      cells.forEach(cell=>{
+        if(cell.textContent===grid[c][r]) cell.classList.add('lit');
+      });
+    });
+  }
+
+  // Draw paylines
+  if(hitLines.length>0) drawPaylines(hitLines);
+
+  if(isJP){
+    const jpPrize=G.jackpot;
+    G.chips+=jpPrize;
+    G.jackpot=50000;
+    setS(`🎆 JACKPOT!! +${jpPrize.toLocaleString()} チップ！`,'jp');
+    setBadge('🎆 JACKPOT!!');
+    showWin('🎆 JACKPOT!!','+'+jpPrize.toLocaleString()+'🪙','7️⃣7️⃣7️⃣ BET×500！');
+    fireCoins(40);
+    $('jackpot-val').classList.add('jp-flash');
+    setTimeout(()=>$('jackpot-val').classList.remove('jp-flash'),2000);
+  } else if(winAmt>0){
+    G.chips+=winAmt;
+    setS(`✨ ${bestLabel} ×${totalMult}倍！ +${winAmt} チップ！`,'win');
+    setBadge('WIN! 🏆');
+    showWin(bestLabel, '+'+winAmt+'🪙', 'BET×'+totalMult+(hitLines.length>1?' ('+hitLines.length+'ライン同時当選!)':''));
+    if(totalMult>=10) fireCoins(8+totalMult);
+  } else {
+    setS(`💀 はずれ。${G.bet} チップ失いました。`,'lose');
+    setBadge('TRY AGAIN');
+  }
+
+  if(winAmt>0||isJP){
+    $('last-win').textContent='🪙 +'+(isJP?G.lastWin:winAmt);
+    $('last-win').className='iv wv';
+    G.lastWin=isJP?G.lastWin:winAmt; // already added above
+  } else {
+    $('last-win').textContent='—';
+    $('last-win').className='iv';
+  }
+
+  save();
+  finishRound();
+}
+
+// ── Draw paylines on SVG ──
+function drawPaylines(hitLines){
+  const svg=$('paylines-svg');
+  svg.innerHTML='';
+  const outer=$('reels-outer');
+  const W=outer.clientWidth, H=outer.clientHeight;
+  // Each reel col center x
+  const colW=W/3;
+  const xs=[colW*0.5, colW*1.5, colW*2.5];
+  // Row center y (3 rows)
+  const rowH=H/3;
+  const ys=[rowH*0.5, rowH*1.5, rowH*2.5];
+
+  for(const li of hitLines){
+    const [r0,r1,r2]=LINES[li];
+    const color=LINE_COLORS[li];
+    const line=document.createElementNS('http://www.w3.org/2000/svg','polyline');
+    const pts=[[xs[0],ys[r0]],[xs[1],ys[r1]],[xs[2],ys[r2]]];
+    line.setAttribute('points',pts.map(p=>p.join(',')).join(' '));
+    line.setAttribute('stroke',color);
+    line.setAttribute('stroke-width','2.5');
+    line.setAttribute('stroke-opacity','0.85');
+    line.setAttribute('fill','none');
+    line.setAttribute('stroke-linecap','round');
+    line.setAttribute('stroke-linejoin','round');
+    svg.appendChild(line);
+    // Animate
+    const len=line.getTotalLength?.()||300;
+    line.style.strokeDasharray=len;
+    line.style.strokeDashoffset=len;
+    line.style.animation=`drawLine 0.4s ease ${li*0.1}s forwards`;
+  }
+  // Add keyframes if not present
+  if(!document.querySelector('#plKF')){
+    const st=document.createElement('style');
+    st.id='plKF';
+    st.textContent='@keyframes drawLine{to{stroke-dashoffset:0;}}';
+    document.head.appendChild(st);
+  }
+}
+
+// ── Win overlay ──
+function showWin(label,amount,sub){
+  $('wbl').textContent=label;
+  $('wba').textContent=amount;
+  $('wbs').textContent=sub;
+  $('win-overlay').classList.add('show');
+  setTimeout(()=>$('win-overlay').classList.remove('show'),2200);
+}
+
+// ── Coins ──
+function fireCoins(n){
+  const cx=window.innerWidth/2, cy=window.innerHeight*0.38;
+  for(let i=0;i<n;i++){
+    setTimeout(()=>{
+      const el=document.createElement('div');
+      el.className='coin-fly'; el.textContent='🪙';
+      const a=Math.random()*Math.PI*2, d=70+Math.random()*180;
+      el.style.setProperty('--tx',Math.cos(a)*d+'px');
+      el.style.setProperty('--ty',Math.sin(a)*d-50+'px');
+      el.style.left=(cx+Math.random()*50-25)+'px';
+      el.style.top=(cy+Math.random()*30-15)+'px';
+      document.body.appendChild(el);
+      setTimeout(()=>el.remove(),900);
+    },i*35);
+  }
+}
+
+// ── Finish ──
+function finishRound(){
+  G.phase='idle';
+  G.bet=Math.min(G.lastBet||G.bet||5, G.chips);
+  if(G.chips<=0){
+    G.bet=0;
+    setGuide('💀 チップ切れ！↺でリセットできます。','');
+  } else {
+    setGuide(`🪙 ${G.bet} チップをBET中。SPINで次のゲームへ！`,'チップを変えるか、そのままSPINを押してください');
+  }
+  updateUI();
+}
+
+// ── Spin start ──
+function onSpin(){
+  if(G.phase!=='idle'||!G.bet) return;
+
+  // Reset visual
+  for(let i=0;i<3;i++){
+    $('rc'+i).classList.remove('stopped');
+    const cells=$('rs'+i).querySelectorAll('.sym-cell');
+    cells.forEach(c=>c.classList.remove('lit'));
+  }
+  $('paylines-svg').innerHTML='';
+  $('win-overlay').classList.remove('show');
+
+  G.lastBet=G.bet;
+  G.chips-=G.bet;
+  G.stopped=[false,false,false];
+  G.finalPos=[0,0,0];
+  G.phase='spinning';
+
+  setBadge('SPINNING...');
+  setS('');
+  setGuide('🎰 回転中！STOPボタンで止めてください','左→中→右の順番がオススメ');
+
+  updateUI();
+  disableChips(true);
+
+  // Start all 3 reels
+  for(let i=0;i<3;i++) startReelSpin(i);
+}
+
+// ── Bet ──
+function addBet(amt){
+  if(G.phase!=='idle') return;
+  const room=G.chips-G.bet;
+  if(room<=0){setGuide('⚠️ チップが足りません！','持ちチップ以上は賭けられません');return;}
+  G.bet+=Math.min(amt,room);
+  updateUI();
+  setGuide(`🪙 ${G.bet} チップをBET中`,'さらに追加するかSPINを押してください');
+}
+function betMax(){
+  if(G.phase!=='idle') return;
+  G.bet=Math.min(100,G.chips);
+  updateUI();
+  setGuide(`🪙 MAX BET ${G.bet}！SPINで勝負！`,'最大ベットで高配当を狙おう！');
+}
+
+// ── UI helpers ──
+function updateUI(){
+  $('chips-disp').textContent=G.chips;
+  $('bet-disp').textContent=G.bet;
+  $('jackpot-val').textContent=G.jackpot.toLocaleString();
+  const canSpin=G.bet>0&&G.phase==='idle'&&G.chips>0;
+  $('spin-btn').disabled=!canSpin;
+  $('spin-btn').classList.toggle('ready',canSpin);
+  disableChips(G.phase!=='idle');
+}
+function disableChips(on){
+  ['c1','c5','c10','c25','c100','cmax'].forEach(id=>{
+    const el=$(id); if(el) el.disabled=on;
+  });
+}
+function disableStops(){
+  [0,1,2].forEach(i=>{$('stop'+i).disabled=true;$('stop'+i).classList.add('stopped-state');});
+}
+function setBadge(t){$('badge').textContent=t;}
+function setGuide(a,b){$('guide-sit').textContent=a;$('guide-hint').textContent=b;}
+function setS(m,c=''){$('status-msg').textContent=m;$('status-msg').className=c;}
+
+// ── Reset ──
+function resetGame(){
+  if(!confirm('チップをリセットしますか？'))return;
+  localStorage.removeItem('rslots2');
+  // Cancel any running animations
+  for(let i=0;i<3;i++) cancelAnimationFrame(G.rafIds[i]);
+  G.chips=1000; G.bet=0; G.jackpot=50000;
+  G.phase='idle'; G.stopped=[false,false,false];
+  G.reelPos=[0,0,0]; G.finalPos=[0,0,0]; G.lastBet=0;
+  $('last-win').textContent='—'; $('last-win').className='iv';
+  $('paylines-svg').innerHTML='';
+  $('win-overlay').classList.remove('show');
+  disableStops();
+  setBadge('WELCOME'); setS('');
+  buildAllReels();
+  setGuide('🎰 ベットしてSPINを押してください！','左・中・右のSTOPで止めて役を揃えよう');
+  updateUI();
+}
+
+// ── Init ──
+buildAllReels();
+updateUI();
+setGuide('🎰 チップを選んでBET → SPINを押してください！','STOPで止めて上段・中段・下段・斜めを揃えよう');
+</script>
+</body>
+</html>
