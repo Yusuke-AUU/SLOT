@@ -793,6 +793,7 @@ function finishRound(){
   } else {
     setGuide(`🪙 ${G.bet} チップをBET中。SPINで次のゲームへ！`,'チップを変えるか、そのままSPINを押してください');
   }
+  save(); // ← ラウンド終了時に必ずセーブ
   updateUI();
 }
 
@@ -811,6 +812,7 @@ function onSpin(){
 
   G.lastBet=G.bet;
   G.chips-=G.bet;
+  save(); // ← スピン開始時（チップ控除直後）にセーブ
   G.stopped=[false,false,false];
   G.finalPos=[0,0,0];
   G.phase='spinning';
@@ -887,6 +889,10 @@ function resetGame(){
 buildAllReels();
 updateUI();
 setGuide('🎰 チップを選んでBET → SPINを押してください！','STOPで止めて上段・中段・下段・斜めを揃えよう');
+
+// ← ページを閉じる・切り替え時も確実にセーブ
+window.addEventListener('beforeunload', ()=>save());
+document.addEventListener('visibilitychange', ()=>{ if(document.hidden) save(); });
 </script>
 </body>
 </html>
