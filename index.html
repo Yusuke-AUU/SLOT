@@ -247,6 +247,15 @@ html,body{
   border-color:rgba(150,150,150,0.2);
 }
 
+/* Stop buttons row directly under reels */
+#stop-row{
+  display:flex;gap:3px;width:100%;margin-top:3px;
+}
+#stop-row .stop-btn{
+  flex:1;padding:7px 2px;border-radius:6px;
+  font-size:0.72rem;
+}
+
 /* Coin fly */
 .coin-fly{
   position:fixed;font-size:1.1rem;pointer-events:none;z-index:999;
@@ -319,7 +328,7 @@ html,body{
       <span class="jp-label">🪙 ✦</span>
     </div>
 
-    <!-- REELS -->
+    <!-- REELS + STOP BUTTONS -->
     <div id="reels-outer">
       <svg id="paylines-svg" id="psvg"></svg>
       <div id="reels-row">
@@ -335,6 +344,18 @@ html,body{
           <div class="reel-center-line"></div>
           <div class="reel-strip" id="rs2"></div>
         </div>
+      </div>
+      <!-- STOP buttons directly under each reel -->
+      <div id="stop-row">
+        <button class="stop-btn" id="stop0" onclick="stopReel(0)" disabled>
+          <span class="sb-main">STOP</span><span class="sb-sub">左</span>
+        </button>
+        <button class="stop-btn" id="stop1" onclick="stopReel(1)" disabled>
+          <span class="sb-main">STOP</span><span class="sb-sub">中</span>
+        </button>
+        <button class="stop-btn" id="stop2" onclick="stopReel(2)" disabled>
+          <span class="sb-main">STOP</span><span class="sb-sub">右</span>
+        </button>
       </div>
     </div>
 
@@ -375,17 +396,8 @@ html,body{
       <div class="iitem">前回の獲得<span class="iv" id="last-win">—</span></div>
     </div>
     <div id="action-row">
-      <button class="stop-btn" id="stop0" onclick="stopReel(0)" disabled>
-        <span class="sb-main">STOP</span><span class="sb-sub">左</span>
-      </button>
       <button id="spin-btn" onclick="onSpin()" disabled>
         <span>🎰 SPIN</span>
-      </button>
-      <button class="stop-btn" id="stop1" onclick="stopReel(1)" disabled>
-        <span class="sb-main">STOP</span><span class="sb-sub">中</span>
-      </button>
-      <button class="stop-btn" id="stop2" onclick="stopReel(2)" disabled>
-        <span class="sb-main">STOP</span><span class="sb-sub">右</span>
       </button>
     </div>
   </div>
