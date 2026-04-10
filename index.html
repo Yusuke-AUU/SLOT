@@ -190,11 +190,11 @@ html,body{
 }
 .chip-btn:active{transform:scale(0.88);}
 .chip-btn:disabled{opacity:0.22;cursor:not-allowed;}
-#c1 {background:radial-gradient(circle,#a0a0a0,#606060);color:#fff;}
-#c5 {background:radial-gradient(circle,#e53e3e,#c53030);color:#fff;}
-#c10{background:radial-gradient(circle,#38a169,#276749);color:#fff;}
-#c25{background:radial-gradient(circle,#3182ce,#2b6cb0);color:#fff;}
-#c100{background:radial-gradient(circle,#805ad5,#6b46c1);color:#fff;}
+#c10  {background:radial-gradient(circle,#a0a0a0,#606060);color:#fff;}
+#c100 {background:radial-gradient(circle,#e53e3e,#c53030);color:#fff;}
+#c1k  {background:radial-gradient(circle,#38a169,#276749);color:#fff;font-size:0.55rem;}
+#c10k {background:radial-gradient(circle,#3182ce,#2b6cb0);color:#fff;font-size:0.5rem;}
+#c100k{background:radial-gradient(circle,#805ad5,#6b46c1);color:#fff;font-size:0.45rem;}
 #cmax{
   flex:1;background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.4);
   border-radius:6px;color:var(--gold);font-family:'Oswald',sans-serif;font-size:0.58rem;
@@ -383,11 +383,11 @@ html,body{
   <div id="bottom-panel">
     <div class="panel-label">▸ BET ◂</div>
     <div id="chip-row">
-      <button class="chip-btn" id="c1"  onclick="addBet(1)">1</button>
-      <button class="chip-btn" id="c5"  onclick="addBet(5)">5</button>
-      <button class="chip-btn" id="c10" onclick="addBet(10)">10</button>
-      <button class="chip-btn" id="c25" onclick="addBet(25)">25</button>
-      <button class="chip-btn" id="c100" onclick="addBet(100)">100</button>
+      <button class="chip-btn" id="c10"   onclick="addBet(10)">10</button>
+      <button class="chip-btn" id="c100"  onclick="addBet(100)">100</button>
+      <button class="chip-btn" id="c1k"   onclick="addBet(1000)">1K</button>
+      <button class="chip-btn" id="c10k"  onclick="addBet(10000)">10K</button>
+      <button class="chip-btn" id="c100k" onclick="addBet(100000)">100K</button>
       <button id="cmax" onclick="betMax()">MAX BET</button>
     </div>
     <div id="info-row">
@@ -839,7 +839,7 @@ function addBet(amt){
 }
 function betMax(){
   if(G.phase!=='idle') return;
-  G.bet=Math.min(100,G.chips);
+  G.bet=Math.min(100000,G.chips);
   updateUI();
   setGuide(`🪙 MAX BET ${G.bet}！SPINで勝負！`,'最大ベットで高配当を狙おう！');
 }
@@ -855,7 +855,7 @@ function updateUI(){
   disableChips(G.phase!=='idle');
 }
 function disableChips(on){
-  ['c1','c5','c10','c25','c100','cmax'].forEach(id=>{
+  ['c10','c100','c1k','c10k','c100k','cmax'].forEach(id=>{
     const el=$(id); if(el) el.disabled=on;
   });
 }
